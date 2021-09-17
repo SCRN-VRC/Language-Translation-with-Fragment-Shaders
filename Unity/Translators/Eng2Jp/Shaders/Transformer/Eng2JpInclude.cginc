@@ -461,7 +461,7 @@ sc_uint2 txEnter = layersPos[46].xy + uint2(5, 7);
 sc_uint2 txStartBtn = layersPos[46].xy + uint2(6, 7);
 sc_uint2 txClearBtn = layersPos[46].xy + uint2(7, 7);
 
-#define INPUT_THRESHOLD         35
+#define INPUT_THRESHOLD         15
 #define CHAR_MAX                80
 #define TOKEN_MAX               20
 #define KEY_IDLE                0
