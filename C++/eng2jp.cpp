@@ -1895,9 +1895,9 @@ public:
 int main()
 {
     SetConsoleOutputCP(CP_UTF8);
-    string PATHWEIGHTS = "D:\\Storage\\Python\\transformers\\save_model\\eng2jp_weights.bytes";
-    string PATHTEXT2SEQ = "D:\\Storage\\Python\\transformers\\data\\eng_text2seq.tsv";
-    string PATHSEQ2TEXT = "D:\\Storage\\Python\\transformers\\data\\jp_seq2text.tsv";
+    string PATHWEIGHTS = "./eng2jp_weights.bytes";
+    string PATHTEXT2SEQ = "./eng_text2seq.tsv";
+    string PATHSEQ2TEXT = "./jp_seq2text.tsv";
 
     string input;
     getline(cin, input);
