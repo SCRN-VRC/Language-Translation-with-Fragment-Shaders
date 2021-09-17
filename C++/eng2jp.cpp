@@ -570,7 +570,7 @@ public:
         }
 
         // get mapping from english
-        
+
         string line;
         string token;
         while (std::getline(fin2, line))
@@ -619,22 +619,22 @@ public:
         for (uint i = 0; i < 6; i++)
         {
             encoder_block* encoder = &encoder_array[i];
-			encoder->number = i;
-			encoder->lmhaQ = (float**)createArray(22, 512, sizeof(float));
-			encoder->lmhaK = (float**)createArray(22, 512, sizeof(float));
-			encoder->lmhaV = (float**)createArray(22, 512, sizeof(float));
-			encoder->lsatQK = (float***)createArray(8, 22, 22, sizeof(float));
-			encoder->lsoft = (float***)createArray(8, 22, 22, sizeof(float));
-			encoder->lsatSV = (float***)createArray(8, 22, 64, sizeof(float));
-			encoder->lmhaO = (float**)createArray(22, 512, sizeof(float));
-			encoder->lmean1 = new float[22 * sizeof(float)];
-			encoder->lvar1 = new float[22 * sizeof(float)];
-			encoder->lnorm1 = (float**)createArray(22, 512, sizeof(float));
-			encoder->lffn1 = (float**)createArray(22, 1024, sizeof(float));
-			encoder->lffn2 = (float**)createArray(22, 512, sizeof(float));
-			encoder->lmean2 = new float[22 * sizeof(float)];
-			encoder->lvar2 = new float[22 * sizeof(float)];
-			encoder->lnorm2 = (float**)createArray(22, 512, sizeof(float));
+            encoder->number = i;
+            encoder->lmhaQ = (float**)createArray(22, 512, sizeof(float));
+            encoder->lmhaK = (float**)createArray(22, 512, sizeof(float));
+            encoder->lmhaV = (float**)createArray(22, 512, sizeof(float));
+            encoder->lsatQK = (float***)createArray(8, 22, 22, sizeof(float));
+            encoder->lsoft = (float***)createArray(8, 22, 22, sizeof(float));
+            encoder->lsatSV = (float***)createArray(8, 22, 64, sizeof(float));
+            encoder->lmhaO = (float**)createArray(22, 512, sizeof(float));
+            encoder->lmean1 = new float[22 * sizeof(float)];
+            encoder->lvar1 = new float[22 * sizeof(float)];
+            encoder->lnorm1 = (float**)createArray(22, 512, sizeof(float));
+            encoder->lffn1 = (float**)createArray(22, 1024, sizeof(float));
+            encoder->lffn2 = (float**)createArray(22, 512, sizeof(float));
+            encoder->lmean2 = new float[22 * sizeof(float)];
+            encoder->lvar2 = new float[22 * sizeof(float)];
+            encoder->lnorm2 = (float**)createArray(22, 512, sizeof(float));
             encoder->weights.number = i;
         }
 
