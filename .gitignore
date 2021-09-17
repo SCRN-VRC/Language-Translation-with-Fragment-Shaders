@@ -493,3 +493,5 @@ FodyWeavers.xsd
 *.kra
 Python/keyboard.png
 Python/save_model/eng2jp_weights.bytes
+Unity/Eng2Jp/Weights/baked-eng2jp.asset
+Unity/Eng2Jp/Weights/eng2jp_weights.bytes
