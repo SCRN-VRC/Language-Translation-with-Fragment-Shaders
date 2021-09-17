@@ -1528,11 +1528,11 @@ public:
     {
         uint* seqIn = text2seq(input);
         createEncoderMask(seqIn, encoderMask);
-        //for (uint i = 0; i < 22; i++)
-        //{
-        //    cout << seqIn[i] << " ";
-        //}
-        //cout << endl;
+        for (uint i = 0; i < 22; i++)
+        {
+            cout << seqIn[i] << " ";
+        }
+        cout << endl;
 
         vector<thread> threads;
 
