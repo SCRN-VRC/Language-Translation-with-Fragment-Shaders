@@ -6,14 +6,15 @@
     }
     SubShader
     {
-        Tags { "RenderType"="Cutout" "Queue"="AlphaTest" 
-               "IgnoreProjector" = "True" }
-
+        Tags {"Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="Transparent"}
+        LOD 100
+        
+        ZWrite Off
+        Blend SrcAlpha OneMinusSrcAlpha
+        Cull Off
+        
         Pass
         {
-            Blend SrcAlpha OneMinusSrcAlpha
-            Cull Off
-
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
