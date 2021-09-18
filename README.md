@@ -46,7 +46,7 @@ To generate a Japanese sentence, the decoder layer picks the highest probable Ja
 
 ## Setup
 
-1. Download the .unitypackage from Release and import it.
+1. Download the latest .unitypackage from [Release](https://github.com/SCRN-VRC/Language-Translation-with-Fragment-Shaders/releases/) and import it.
 2. If you cloned the repo, GitHub will not host the large network models.
     - Download [baked-eng2jp.asset](https://mega.nz/file/IFBRUSAY#YOIQMON8gsbIYtjgrE9rfVu0pgFMhCBeSoy5jNrvRUU) and put it inside the `Translator/Eng2Jp/Weights` folder for Unity before you open the Scene.
 3. Look in the Prefab folder and add the `TranslatorEng2Jp.prefab` in the world or avatar.
