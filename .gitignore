@@ -495,3 +495,4 @@ FodyWeavers.xsd
 Python/keyboard.png
 *eng2jp_weights.bytes
 *baked-eng2jp.asset
+Python/save_model/calibration*

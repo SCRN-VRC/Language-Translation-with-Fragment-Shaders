@@ -562,6 +562,7 @@ def evaluate(sentence):
         #tf.print(predicted_id,decoder_input)
         # return the result if the predicted_id is equal to the end token
         if predicted_id == token_Japanese.texts_to_sequences(['EOS']):
+            out['input_sentence'] = sentence.numpy()
             return tf.squeeze(decoder_input, axis=0), attention_weights , sentence, out
 
         # concatentate the predicted_id to the output which is given to the decoder
@@ -569,6 +570,7 @@ def evaluate(sentence):
         decoder_input = tf.concat([decoder_input, predicted_id], axis=1)
         outputs = out
 
+    outputs['input_sentence'] = sentence.numpy()
     return tf.squeeze(decoder_input, axis=0), attention_weights, sentence, outputs
 
 def plot_attention_weights(attention, sentence_vec, result_vec, sentence , result, layer):
@@ -615,6 +617,7 @@ def plot_attention_weights(attention, sentence_vec, result_vec, sentence , resul
 def toJapanese(word):
     sent = ""
     for i in word:
+        if i == 0: break
         if i != 2 and i != 1:
             sent = sent + [key for key, value in token_Japanese.word_index.items() if value == i][0]+" "
     return sent
@@ -622,7 +625,8 @@ def toJapanese(word):
 def toEnglish(word):
     sent = ""
     for i in word:
-        if i != 2 and i != 1:
+        if i == 0: break
+        elif i != 2 and i != 1:
             sent = sent + [key for key, value in token_English.word_index.items() if value == i][0]+" "
     return sent
 
@@ -640,10 +644,10 @@ def result(samples, plot=False):
             plot_attention_weights(attn_wt,sentence,decoded,sent[0],
                                    toJapanese(decoded),'decoder_layer6_block2')
 
-def translate(s, plot=False):
-    print('En          :  ' + s)
+def translate(s, plot=False, stdout=True):
+    if stdout: print('En          :  ' + s)
     decoded, attn_wt, sentence, layers_out = evaluate([s])
-    print('Jp Predicted : ' + toJapanese(decoded))
+    if stdout: print('Jp Predicted : ' + toJapanese(decoded))
     if plot:
         plot_attention_weights(attn_wt,sentence,decoded, '<SOS> ' + s + ' <EOS>',
                                toJapanese(decoded),'decoder_layer6_block2')
@@ -655,7 +659,187 @@ layers_keys = list(layers_out)
 
 weights = transformer.get_weights()
 weights_name = [i.name for i in transformer.trainable_variables]
+
+# Post training quantization
+
+import random
+import pickle
+from scipy.stats import entropy
+from os.path import exists
+from tqdm import tqdm
+import re
+
+# Gather 1000 samples for calibration
+sampleNum = 1000
+samplesPath = "./save_model/calibration/"
+samples = []
+
+pat = re.compile('.*(_q$|_k$|_v$|encoding|dense|ffn).*')
+compare_keys = [x for x in layers_keys if not pat.match(x) == None]
+
+file_exists = exists(samplesPath + "sample" + str(sampleNum - 1) + ".npy")
+if not (file_exists):
+    print("Caching model outputs for quantization calibration...")
+    sampInd = random.sample(range(0, len(data[0]) - 1), sampleNum)
+    for si in tqdm(range(sampleNum)):
+        layers_out = translate(data[0][sampInd[si]], False, False)
+        samples.append(layers_out)
+        f = open(samplesPath + "sample" + str(si) + ".npy", "wb")
+        # write the python object (dict) to pickle file
+        pickle.dump(layers_out, f)
+        f.close()
+else:
+    print("Loading model outputs for quantization calibration...")
+    for si in range(sampleNum):
+        f = open(samplesPath + "sample" + str(si) + ".npy", "rb")
+        outputs = pickle.load(f)
+        samples.append(outputs)
+        f.close()
+
+def quantize(x, s, z):
+    return np.clip(np.round(s * x + z), -128, 127)
+
+def dequantize(xq, s, z):
+    return (xq - z) * (1.0 / s)
+
+def QuantizationGA(weights, max_iters, children, sampleCount, mutation):
+    print("Starting quantization calibration...")
+    bestWeights = []
+    bestParams = []
+    bestScores = []
     
+    # initalization
+    curParams = []
+    for w in weights:
+        cw = w.flatten()
+        beta = min(cw)
+        alpha = max(cw)
+        scale = 255.0 / (alpha - beta)
+        zp = -round(beta * scale) - 128
+        curParams.append([alpha, beta, scale, zp])
+    
+    # save 2 of the best, initally it's the same
+    for i in range(2):
+        bestWeights.append(weights)
+        bestParams.append(curParams)
+        bestScores.append(np.inf)
+    
+    try:
+        # generations
+        for itn in range(max_iters):
+            # children
+            childWeights = []
+            childParams = []
+            childScores = []
+            
+            for child in tqdm(range(children)):
+                # mutations
+                p1 = bestParams[0]
+                p2 = bestParams[1]
+                
+                curParams = []
+                for i in range(len(weights)):
+                    # swap
+                    alpha = p1[0] if random.random() < mutation else p2[0]
+                    beta = p1[1] if random.random() < mutation else p2[1]
+                    
+                    dist = abs(alpha - beta)
+                    
+                    # step
+                    alpha = alpha + (random.random() - 0.5) * dist * 0.15
+                    beta = beta + (random.random() - 0.5) * dist * 0.15
+                    
+                    # random hops
+                    alpha = alpha if random.random() < mutation else (random.random() - 0.5) * dist
+                    beta = beta if random.random() < mutation else (random.random() - 0.5) * dist
+                    
+                    scale = 255.0 / (alpha - beta)
+                    zp = -round(beta * scale) - 128
+                        
+                    curParams.append([alpha, beta, scale, zp])
+                    
+                childParams.append(curParams)
+                
+                newWeights = []
+                for i in range(len(weights)):
+                    newWeights.append(quantize(weights[i], curParams[i][2], curParams[i][3]))
+                
+                childWeights.append(newWeights)
+                
+                for i in range(len(weights)):
+                    newWeights[i] = dequantize(newWeights[i], curParams[i][2], curParams[i][3])
+                
+                # cumulative entropy score
+                score = 0
+                
+                # entroy calculation
+                transformer.set_weights(newWeights)
+                
+                # randomly pick 100
+                for ind in random.sample(range(sampleNum), sampleCount):
+                    str_in = toEnglish(samples[ind]['input_sentence'][0]).strip()
+                    layers_out = translate(str_in, False, False)
+                    # compare layers
+                    for name in compare_keys:
+                        l1 = samples[ind][name]
+                        l2 = layers_out[name]
+    
+                        # reshape to the same shape
+                        if l1.shape[1] > l2.shape[1]:
+                            d = l1.shape[1] - l2.shape[1]
+                            npad = ((0, 0), (0, d), (0, 0))
+                            l2 = np.pad(l2, pad_width=npad, mode='constant', constant_values = 10000.0)
+                        elif l2.shape[1] > l1.shape[1]:
+                            d = l2.shape[1] - l1.shape[1]
+                            npad = ((0, 0), (0, d), (0, 0))
+                            l1 = np.pad(l1, pad_width=npad, mode='constant', constant_values = 10000.0)
+                        
+                        # non zero positive values
+                        l1 = l1.flatten()
+                        l2 = l2.flatten()
+                        
+                        lmin = min(min(l1), min(l2))
+                        
+                        if lmin <= 0.0:
+                            lmin = -lmin + 0.0001
+                            l1 = l1 + lmin
+                            l2 = l2 + lmin
+                        
+                        layer_score = entropy(l1, qk = l2)
+                        if name == 'final_dense_layer':
+                            layer_score = layer_score * 20
+                        score = score + layer_score
+                        
+                childScores.append(score)
+                
+            # add best scoring child
+            bestIndex = childScores.index(min(childScores))
+            bestWeights.append(childWeights[bestIndex])
+            bestParams.append(childParams[bestIndex])
+            bestScores.append(childScores[bestIndex])
+            
+            # sort based on score
+            sorted_lists = sorted(zip(bestWeights, bestParams, bestScores), key=lambda x: x[2])
+            sWeights, sParams, sScores = [[x[i] for x in sorted_lists] for i in range(3)]
+    
+            # keep a copy of the previous generation
+            bestWeights = sWeights[0:2]
+            bestParams = sParams[0:2]
+            bestScores = sScores[0:2]
+            
+            print("\nGeneration: %i - scores: %f, %f" % (itn, bestScores[0], bestScores[1]))
+            print("Best Parameters:")
+            print(bestParams)
+            
+        except KeyboardInterrupt:
+            pass
+        
+    return bestWeights, bestParams, bestScores
+
+bestWeights, bestParams, bestScores = QuantizationGA(weights, 2, 5, 5, 0.9)
+
+# Write weights
+
 if 0:
 
     print("Exporting data.")
