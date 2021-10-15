@@ -740,18 +740,18 @@ def QuantizationGA(weights, max_iters, children, sampleCount, mutation):
                 curParams = []
                 for i in range(len(weights)):
                     # swap
-                    alpha = p1[0] if random.random() < mutation else p2[0]
-                    beta = p1[1] if random.random() < mutation else p2[1]
+                    alpha = p1[i][0] if random.random() < mutation else p2[i][0]
+                    beta = p1[i][1] if random.random() < mutation else p2[i][1]
                     
                     dist = abs(alpha - beta)
                     
                     # step
-                    alpha = alpha + (random.random() - 0.5) * dist * 0.15
-                    beta = beta + (random.random() - 0.5) * dist * 0.15
+                    alpha = alpha + (random.random() - 0.5) * dist * 0.05
+                    beta = beta + (random.random() - 0.5) * dist * 0.05
                     
                     # random hops
-                    alpha = alpha if random.random() < mutation else (random.random() - 0.5) * dist
-                    beta = beta if random.random() < mutation else (random.random() - 0.5) * dist
+                    alpha = alpha if random.random() < mutation else alpha + (random.random() - 0.5) * dist
+                    beta = beta if random.random() < mutation else beta + (random.random() - 0.5) * dist
                     
                     scale = 255.0 / (alpha - beta)
                     zp = -round(beta * scale) - 128
@@ -828,11 +828,9 @@ def QuantizationGA(weights, max_iters, children, sampleCount, mutation):
             bestScores = sScores[0:2]
             
             print("\nGeneration: %i - scores: %f, %f" % (itn, bestScores[0], bestScores[1]))
-            print("Best Parameters:")
-            print(bestParams)
             
-        except KeyboardInterrupt:
-            pass
+    except KeyboardInterrupt:
+        pass
         
     return bestWeights, bestParams, bestScores
 
