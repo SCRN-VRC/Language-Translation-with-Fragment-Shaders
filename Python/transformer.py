@@ -702,27 +702,43 @@ def quantize(x, s, z):
 def dequantize(xq, s, z):
     return (xq - z) * (1.0 / s)
 
-def QuantizationGA(weights, max_iters, children, sampleCount, mutation):
+def QuantizationGA(weights, max_iters, children=5, sampleCount=20, mutation=0.9, stepScale=0.1):
     print("Starting quantization calibration...")
     bestWeights = []
     bestParams = []
     bestScores = []
     
-    # initalization
-    curParams = []
-    for w in weights:
-        cw = w.flatten()
-        beta = min(cw)
-        alpha = max(cw)
-        scale = 255.0 / (alpha - beta)
-        zp = -round(beta * scale) - 128
-        curParams.append([alpha, beta, scale, zp])
+    save_exists = exists(samplesPath + 'savedScores.pkl')
+    save_exists = save_exists and exists(samplesPath + 'savedWeights.pkl')
+    save_exists = save_exists and exists(samplesPath + 'saveParams.pkl')
     
-    # save 2 of the best, initally it's the same
-    for i in range(2):
-        bestWeights.append(weights)
-        bestParams.append(curParams)
-        bestScores.append(np.inf)
+    if save_exists:
+        print("Loading saved parameters...")
+        with open(samplesPath + 'savedWeights.pkl', 'rb') as f:
+            bestWeights = pickle.load(f)
+            f.close()
+        with open(samplesPath + 'saveParams.pkl', 'rb') as f:
+            bestParams = pickle.load(f)
+            f.close()
+        with open(samplesPath + 'savedScores.pkl', 'rb') as f:
+            bestScores = pickle.load(f)
+            f.close()
+    else:
+        # initalization
+        curParams = []
+        for w in weights:
+            cw = w.flatten()
+            beta = min(cw)
+            alpha = max(cw)
+            scale = 255.0 / (alpha - beta)
+            zp = -round(beta * scale) - 128
+            curParams.append([alpha, beta, scale, zp])
+        
+        # save 2 of the best, initally it's the same
+        for i in range(2):
+            bestWeights.append(weights)
+            bestParams.append(curParams)
+            bestScores.append(np.inf)
     
     try:
         # generations
@@ -745,13 +761,18 @@ def QuantizationGA(weights, max_iters, children, sampleCount, mutation):
                     
                     dist = abs(alpha - beta)
                     
+                    # anneal
+                    anneal = (1.0 - (itn / max_iters) * 0.85)
+                    
                     # step
-                    alpha = alpha + (random.random() - 0.5) * dist * 0.05
-                    beta = beta + (random.random() - 0.5) * dist * 0.05
+                    alpha = alpha + (random.random() - 0.5) * dist * anneal * stepScale
+                    beta = beta + (random.random() - 0.5) * dist * anneal * stepScale
                     
                     # random hops
-                    alpha = alpha if random.random() < mutation else alpha + (random.random() - 0.5) * dist
-                    beta = beta if random.random() < mutation else beta + (random.random() - 0.5) * dist
+                    if random.random() >= mutation:
+                        hop = (random.random() - 0.5) * dist
+                        alpha = alpha + hop
+                        beta = beta + hop
                     
                     scale = 255.0 / (alpha - beta)
                     zp = -round(beta * scale) - 128
@@ -775,7 +796,7 @@ def QuantizationGA(weights, max_iters, children, sampleCount, mutation):
                 # entroy calculation
                 transformer.set_weights(newWeights)
                 
-                # randomly pick 100
+                # randomly pick x
                 for ind in random.sample(range(sampleNum), sampleCount):
                     str_in = toEnglish(samples[ind]['input_sentence'][0]).strip()
                     layers_out = translate(str_in, False, False)
@@ -831,10 +852,20 @@ def QuantizationGA(weights, max_iters, children, sampleCount, mutation):
             
     except KeyboardInterrupt:
         pass
+    
+    with open(samplesPath + 'savedWeights.pkl', 'wb') as f:
+        pickle.dump(bestWeights, f)
+        f.close()
+    with open(samplesPath + 'saveParams.pkl', 'wb') as f:
+        pickle.dump(bestParams, f)
+        f.close()
+    with open(samplesPath + 'savedScores.pkl', 'wb') as f:
+        pickle.dump(bestScores, f)
+        f.close()
         
     return bestWeights, bestParams, bestScores
 
-bestWeights, bestParams, bestScores = QuantizationGA(weights, 2, 5, 5, 0.9)
+bestWeights, bestParams, bestScores = QuantizationGA(weights, 100, 5, 20, 0.9)
 
 # Write weights
 
