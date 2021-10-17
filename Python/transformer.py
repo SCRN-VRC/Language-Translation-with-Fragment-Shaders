@@ -651,14 +651,68 @@ def translate(s, plot=False, stdout=True):
     if plot:
         plot_attention_weights(attn_wt,sentence,decoded, '<SOS> ' + s + ' <EOS>',
                                toJapanese(decoded),'decoder_layer6_block2')
-    return layers_out
+    return layers_out, decoded
 
 #result(5, True)
-layers_out = translate('my name is sarah and I live in london')
+layers_out, _ = translate('my name is sarah and I live in london')
 layers_keys = list(layers_out)
 
 weights = transformer.get_weights()
 weights_name = [i.name for i in transformer.trainable_variables]
+
+# Write weights
+
+if 0:
+
+    print("Exporting data.")
+
+    def write_weights(array, dest, mode='ab'):
+        with open(dest, mode) as f:
+            if (len(array.shape) == 4):
+                for i in range(0, len(array)):
+                    for j in range(0, len(array[0])):
+                        for k in range(0, len(array[0][0])):
+                            for l in range(0, len(array[0][0][0])):
+                                f.write(struct.pack('f', array[i][j][k][l]))
+            elif (len(array.shape) == 3):
+                for i in range(0, len(array)):
+                    for j in range(0, len(array[0])):
+                        for k in range(0, len(array[0][0])):
+                            f.write(struct.pack('f', array[i][j][k]))
+            elif (len(array.shape) == 2):
+                for i in range(0, len(array)):
+                    for j in range(0, len(array[0])):
+                            f.write(struct.pack('f', array[i][j]))
+            elif (len(array.shape) == 1):
+                for i in range(0, len(array)):
+                    f.write(struct.pack('f', array[i]))
+            f.close()
+    
+    dest = './save_model/eng2jp_weights.bytes'
+    
+    try:
+        os.remove(dest)
+    except OSError:
+        pass
+    for i in range(0, len(weights)):
+        write_weights(weights[i], dest)
+    
+    with open("./data/eng_seq2text.tsv", "w", encoding="utf-8") as f:
+        for k, v in token_English.word_index.items():
+            if v == 1 or v == 2: continue #sos eos
+            f.write("%s\t%s\n" % (k, v))
+    
+    eng_dict = collections.OrderedDict(sorted(token_English.word_index.items()))
+    
+    with open("./data/eng_text2seq.tsv", "w", encoding="utf-8") as f:
+        for k, v in eng_dict.items():
+            f.write("%s\t%s\n" % (k, v))
+        
+    with open("./data/jp_seq2text.tsv", "w", encoding="utf-8") as f:
+        for k, v in token_Japanese.word_index.items():
+            if v == 1 or v == 2: continue #sos eos
+            f.write("%s\t%s\n" % (k, v))
+
 
 # Post training quantization
 
@@ -682,7 +736,7 @@ if not (file_exists):
     print("Caching model outputs for quantization calibration...")
     sampInd = random.sample(range(0, len(data[0]) - 1), sampleNum)
     for si in tqdm(range(sampleNum)):
-        layers_out = translate(data[0][sampInd[si]], False, False)
+        layers_out, _ = translate(data[0][sampInd[si]], False, False)
         samples.append(layers_out)
         f = open(samplesPath + "sample" + str(si) + ".npy", "wb")
         # write the python object (dict) to pickle file
@@ -702,7 +756,7 @@ def quantize(x, s, z):
 def dequantize(xq, s, z):
     return (xq - z) * (1.0 / s)
 
-def QuantizationGA(weights, max_iters, children=5, sampleCount=20, mutation=0.9, stepScale=0.1):
+def QuantizationGA(weights, max_iters, children=10, sampleCount=20, mutation=0.75, stepScale=0.1):
     print("Starting quantization calibration...")
     bestWeights = []
     bestParams = []
@@ -762,7 +816,7 @@ def QuantizationGA(weights, max_iters, children=5, sampleCount=20, mutation=0.9,
                     dist = abs(alpha - beta)
                     
                     # anneal
-                    anneal = (1.0 - (itn / max_iters) * 0.85)
+                    anneal = (1.0 - (itn / max_iters) * 0.5)
                     
                     # step
                     alpha = alpha + (random.random() - 0.5) * dist * anneal * stepScale
@@ -799,7 +853,7 @@ def QuantizationGA(weights, max_iters, children=5, sampleCount=20, mutation=0.9,
                 # randomly pick x
                 for ind in random.sample(range(sampleNum), sampleCount):
                     str_in = toEnglish(samples[ind]['input_sentence'][0]).strip()
-                    layers_out = translate(str_in, False, False)
+                    layers_out, _ = translate(str_in, False, False)
                     # compare layers
                     for name in compare_keys:
                         l1 = samples[ind][name]
@@ -828,7 +882,7 @@ def QuantizationGA(weights, max_iters, children=5, sampleCount=20, mutation=0.9,
                         
                         layer_score = entropy(l1, qk = l2)
                         if name == 'final_dense_layer':
-                            layer_score = layer_score * 20
+                            layer_score = layer_score * 150
                         score = score + layer_score
                         
                 childScores.append(score)
@@ -865,57 +919,31 @@ def QuantizationGA(weights, max_iters, children=5, sampleCount=20, mutation=0.9,
         
     return bestWeights, bestParams, bestScores
 
-bestWeights, bestParams, bestScores = QuantizationGA(weights, 100, 5, 20, 0.9)
+bestWeights, bestParams, bestScores = QuantizationGA(weights, 100)
 
-# Write weights
+# BLEU Scores to compare models
 
-if 0:
+from nltk.translate.bleu_score import sentence_bleu
 
-    print("Exporting data.")
-
-    def write_weights(array, dest, mode='ab'):
-        with open(dest, mode) as f:
-            if (len(array.shape) == 4):
-                for i in range(0, len(array)):
-                    for j in range(0, len(array[0])):
-                        for k in range(0, len(array[0][0])):
-                            for l in range(0, len(array[0][0][0])):
-                                f.write(struct.pack('f', array[i][j][k][l]))
-            elif (len(array.shape) == 3):
-                for i in range(0, len(array)):
-                    for j in range(0, len(array[0])):
-                        for k in range(0, len(array[0][0])):
-                            f.write(struct.pack('f', array[i][j][k]))
-            elif (len(array.shape) == 2):
-                for i in range(0, len(array)):
-                    for j in range(0, len(array[0])):
-                            f.write(struct.pack('f', array[i][j]))
-            elif (len(array.shape) == 1):
-                for i in range(0, len(array)):
-                    f.write(struct.pack('f', array[i]))
-            f.close()
+for cw in range(len(bestParams)):
+    curParams = bestParams[cw]
     
-    dest = './save_model/eng2jp_weights.bytes'
+    newWeights = []
+    for i in range(len(weights)):
+        newWeights.append(quantize(weights[i], curParams[i][2], curParams[i][3]))
+    for i in range(len(weights)):
+        newWeights[i] = dequantize(newWeights[i], curParams[i][2], curParams[i][3])
+                    
+    transformer.set_weights(newWeights)
+    score = 0
+    for rIn in random.sample(range(len(data[0])), 40):
+        _ , decoded = translate(data[0][rIn], stdout=False)
+        out = toJapanese(decoded)
+        cur = sentence_bleu([data[1][rIn].split()], out.split())
+        score = score + cur
+        print("score: %f\nactual: %s\noutput: %s)" % (score, data[1][rIn], out))
+    score /= 40.0
+    print("Model #%i BLEU Score: %f" % (cw, score))
     
-    try:
-        os.remove(dest)
-    except OSError:
-        pass
-    for i in range(0, len(weights)):
-        write_weights(weights[i], dest)
-    
-    with open("./data/eng_seq2text.tsv", "w", encoding="utf-8") as f:
-        for k, v in token_English.word_index.items():
-            if v == 1 or v == 2: continue #sos eos
-            f.write("%s\t%s\n" % (k, v))
-    
-    eng_dict = collections.OrderedDict(sorted(token_English.word_index.items()))
-    
-    with open("./data/eng_text2seq.tsv", "w", encoding="utf-8") as f:
-        for k, v in eng_dict.items():
-            f.write("%s\t%s\n" % (k, v))
-        
-    with open("./data/jp_seq2text.tsv", "w", encoding="utf-8") as f:
-        for k, v in token_Japanese.word_index.items():
-            if v == 1 or v == 2: continue #sos eos
-            f.write("%s\t%s\n" % (k, v))
+# Reset weights
+transformer.set_weights(weights)
