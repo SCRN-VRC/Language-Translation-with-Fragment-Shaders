@@ -718,7 +718,7 @@ if 0:
 
 import random
 import pickle
-from scipy.stats import entropy
+from scipy.spatial import distance
 from os.path import exists
 from tqdm import tqdm
 import re
@@ -858,17 +858,18 @@ def QuantizationGA(weights, max_iters, children=10, sampleCount=20, mutation=0.7
                     for name in compare_keys:
                         l1 = samples[ind][name]
                         l2 = layers_out[name]
-    
+                        # if name == 'final_dense_layer':
+                        #     print(l1.shape)
+                        #     print(l2.shape)
                         # reshape to the same shape
                         if l1.shape[1] > l2.shape[1]:
                             d = l1.shape[1] - l2.shape[1]
                             npad = ((0, 0), (0, d), (0, 0))
-                            l2 = np.pad(l2, pad_width=npad, mode='constant', constant_values = 10000.0)
+                            l2 = np.pad(l2, pad_width=npad, mode='constant', constant_values = 0.0)
                         elif l2.shape[1] > l1.shape[1]:
                             d = l2.shape[1] - l1.shape[1]
                             npad = ((0, 0), (0, d), (0, 0))
-                            l1 = np.pad(l1, pad_width=npad, mode='constant', constant_values = 10000.0)
-                        
+                            l1 = np.pad(l1, pad_width=npad, mode='constant', constant_values = 0.0)
                         # non zero positive values
                         l1 = l1.flatten()
                         l2 = l2.flatten()
@@ -880,9 +881,12 @@ def QuantizationGA(weights, max_iters, children=10, sampleCount=20, mutation=0.7
                             l1 = l1 + lmin
                             l2 = l2 + lmin
                         
-                        layer_score = entropy(l1, qk = l2)
+                        layer_score = distance.jensenshannon(l1, l2)
                         if name == 'final_dense_layer':
-                            layer_score = layer_score * 150
+                            # print(l1[0:10] - lmin)
+                            # print(l2[0:10] - lmin)
+                            # print(layer_score)
+                            layer_score = layer_score * 100
                         score = score + layer_score
                         
                 childScores.append(score)
