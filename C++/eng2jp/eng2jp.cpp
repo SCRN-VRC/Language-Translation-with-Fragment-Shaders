@@ -10,7 +10,6 @@
 #include <algorithm>
 #include <Windows.h> 
 #include <codecvt>
-
 using namespace std;
 #define uint unsigned int
 
@@ -587,7 +586,7 @@ public:
 
         wifstream fin3(pathSeq2Text);
         if (!fin3) {
-            cout << "error opening eng file" << endl;
+            cout << "error opening jp file" << endl;
             exit(-1);
         }
 
@@ -1203,6 +1202,7 @@ public:
 
         freeArray(22, 512, encoder_in);
         freeArray(22, 512, decoder_in);
+        freeArray(22, 3229, final_out);
 
         for (int i = 0; i < 6; i++)
         {
