@@ -1,4 +1,3 @@
-#python==3.8.6/tensorflow==2.5.0/keras==2.4.3/sklearn
 
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences

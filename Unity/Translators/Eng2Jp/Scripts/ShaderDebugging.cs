@@ -34,7 +34,7 @@ public class ShaderDebugging : MonoBehaviour
         material.SetBuffer("buffer", buffer);
         Graphics.SetRandomWriteTarget(1, buffer, false);
         buffer.GetData(element);
-        label = (element!=null && render.isVisible) ? element[0].ToString("F3") : string.Empty; 
+        label = (element!=null && render.isVisible) ? element[0].ToString("F3") : "Empty"; 
     }
 
     void OnGUI()

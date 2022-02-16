@@ -1,4 +1,3 @@
-#python==3.8.6/tensorflow==2.5.0/keras==2.4.3/sklearn
 
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
@@ -90,25 +89,25 @@ def scaled_dot_product_attention(q, k, v, mask, outputs, name):
     """
 
     matmul_qk = tf.matmul(q, k, transpose_b=True)  # (..., seq_len_q, seq_len_k)
-    # DEBUG outputs[f'{name}_sat_matmul_qk'] = matmul_qk.numpy()
+    outputs[f'{name}_sat_matmul_qk'] = matmul_qk.numpy()
     
     # scale matmul_qk
     dk = tf.cast(tf.shape(k)[-1], tf.float32)
     scaled_attention_logits = matmul_qk / tf.math.sqrt(dk)
-    # DEBUG outputs[f'{name}_sat_logits'] = scaled_attention_logits.numpy()
+    outputs[f'{name}_sat_logits'] = scaled_attention_logits.numpy()
     
     # add the mask to the scaled tensor.
     if mask is not None:
         scaled_attention_logits += (mask * -1e9)
 
-    # DEBUG outputs[f'{name}_sat_mask'] = scaled_attention_logits.numpy()
+    outputs[f'{name}_sat_mask'] = scaled_attention_logits.numpy()
     # softmax is normalized on the last axis (seq_len_k) so that the scores
     # add up to 1.
     attention_weights = tf.nn.softmax(scaled_attention_logits, axis=-1)  # (..., seq_len_q, seq_len_k)
-    # DEBUG outputs[f'{name}_sat_softmax'] = attention_weights.numpy()
+    outputs[f'{name}_sat_softmax'] = attention_weights.numpy()
     
     output = tf.matmul(attention_weights, v)  # (..., seq_len_q, depth_v)
-    # DEBUG outputs[f'{name}_sat_matmul_atten'] = output.numpy()
+    outputs[f'{name}_sat_matmul_atten'] = output.numpy()
     
     return output, attention_weights
 
@@ -140,18 +139,18 @@ class MultiHeadAttention(tf.keras.layers.Layer):
         batch_size = tf.shape(q)[0]
 
         q = self.wq(q)  # (batch_size, seq_len, d_model)
-        # DEBUG outputs[f'{name}_q'] = q.numpy()
+        outputs[f'{name}_q'] = q.numpy()
         k = self.wk(k)  # (batch_size, seq_len, d_model)
-        # DEBUG outputs[f'{name}_k'] = k.numpy()
+        outputs[f'{name}_k'] = k.numpy()
         v = self.wv(v)  # (batch_size, seq_len, d_model)
-        # DEBUG outputs[f'{name}_v'] = v.numpy()
+        outputs[f'{name}_v'] = v.numpy()
 
         q = self.split_heads(q, batch_size)  # (batch_size, num_heads, seq_len_q, depth)
-        # DEBUG outputs[f'{name}_q_split_heads'] = q.numpy()
+        outputs[f'{name}_q_split_heads'] = q.numpy()
         k = self.split_heads(k, batch_size)  # (batch_size, num_heads, seq_len_k, depth)
-        # DEBUG outputs[f'{name}_k_split_heads'] = k.numpy()
+        outputs[f'{name}_k_split_heads'] = k.numpy()
         v = self.split_heads(v, batch_size)  # (batch_size, num_heads, seq_len_v, depth)
-        # DEBUG outputs[f'{name}_v_split_heads'] = v.numpy()
+        outputs[f'{name}_v_split_heads'] = v.numpy()
 
         # scaled_attention.shape == (batch_size, num_heads, seq_len_q, depth)
         # attention_weights.shape == (batch_size, num_heads, seq_len_q, seq_len_k)
@@ -159,14 +158,14 @@ class MultiHeadAttention(tf.keras.layers.Layer):
             q, k, v, mask, outputs, name)
 
         scaled_attention = tf.transpose(scaled_attention, perm=[0, 2, 1, 3])  # (batch_size, seq_len_q, num_heads, depth)
-        # DEBUG outputs[f'{name}_scaled_attention_transpose'] = scaled_attention.numpy()
+        outputs[f'{name}_scaled_attention_transpose'] = scaled_attention.numpy()
 
         concat_attention = tf.reshape(scaled_attention,
                                       (batch_size, -1, self.d_model))  # (batch_size, seq_len_q, d_model)
-        # DEBUG outputs[f'{name}_concat_attention'] = concat_attention.numpy()
+        outputs[f'{name}_concat_attention'] = concat_attention.numpy()
 
         output = self.dense(concat_attention)  # (batch_size, seq_len_q, d_model)
-        # DEBUG outputs[f'{name}_mha_output_dense'] = output.numpy()
+        outputs[f'{name}_mha_output_dense'] = output.numpy()
 
         return output, attention_weights, outputs
 
@@ -194,17 +193,17 @@ class EncoderLayer(tf.keras.layers.Layer):
 
         attn_output, _, mha_out = self.mha(x, x, x, mask, f'encoder_layer{i+1}')  # (batch_size, input_seq_len, d_model)
         attn_output = self.dropout1(attn_output, training=training)
-        # DEBUG outputs.update(mha_out)
+        outputs.update(mha_out)
 
         out1 = self.layernorm1(x + attn_output)  # (batch_size, input_seq_len, d_model) , residual conection
-        # DEBUG outputs[f'encoder_layer{i+1}_normalize1'] = out1.numpy()
+        outputs[f'encoder_layer{i+1}_normalize1'] = out1.numpy()
 
         ffn_output = self.ffn(out1)  # (batch_size, input_seq_len, d_model)
         ffn_output = self.dropout2(ffn_output, training=training)
-        # DEBUG outputs[f'encoder_layer{i+1}_ffn'] = ffn_output.numpy()
+        outputs[f'encoder_layer{i+1}_ffn'] = ffn_output.numpy()
 
         out2 = self.layernorm2(out1 + ffn_output)  # (batch_size, input_seq_len, d_model)
-        # DEBUG outputs[f'encoder_layer{i+1}_normalize2'] = out2.numpy()
+        outputs[f'encoder_layer{i+1}_normalize2'] = out2.numpy()
 
         return out2, outputs
 
@@ -233,25 +232,25 @@ class DecoderLayer(tf.keras.layers.Layer):
         attn1, attn_weights_block1, mha_out = self.mha1(x, x, x, look_ahead_mask,
                                                         f'decoder_layer{i+1}_1')  # (batch_size, target_seq_len, d_model)
         attn1 = self.dropout1(attn1, training=training)
-        # DEBUG outputs.update(mha_out)
+        outputs.update(mha_out)
 
         out1 = self.layernorm1(attn1 + x)
-        # DEBUG outputs[f'decoder_layer{i+1}_normalize1'] = out1.numpy()
+        outputs[f'decoder_layer{i+1}_normalize1'] = out1.numpy()
 
         attn2, attn_weights_block2, mha_out2 = self.mha2(
             enc_output, enc_output, out1, padding_mask, f'decoder_layer{i+1}_2')  # (batch_size, target_seq_len, d_model)
         attn2 = self.dropout2(attn2, training=training)
-        # DEBUG outputs.update(mha_out2)
+        outputs.update(mha_out2)
 
         out2 = self.layernorm2(attn2 + out1)  # (batch_size, target_seq_len, d_model)
-        # DEBUG outputs[f'decoder_layer{i+1}_normalize2'] = out2.numpy()
+        outputs[f'decoder_layer{i+1}_normalize2'] = out2.numpy()
 
         ffn_output = self.ffn(out2)  # (batch_size, target_seq_len, d_model)
         ffn_output = self.dropout3(ffn_output, training=training)
-        # DEBUG outputs[f'decoder_layer{i+1}_ffn'] = ffn_output.numpy()
+        outputs[f'decoder_layer{i+1}_ffn'] = ffn_output.numpy()
 
         out3 = self.layernorm3(ffn_output + out2)  # (batch_size, target_seq_len, d_model)
-        # DEBUG outputs[f'decoder_layer{i+1}_ffn_norm'] = out3.numpy()
+        outputs[f'decoder_layer{i+1}_ffn_norm'] = out3.numpy()
 
         return out3, attn_weights_block1, attn_weights_block2, outputs
 
@@ -279,18 +278,18 @@ class Encoder(tf.keras.layers.Layer):
 
         # adding embedding and position encoding.
         x = self.embedding(x)  # (batch_size, input_seq_len, d_model)
-        # DEBUG outputs['encoder_layer_embedding'] = x.numpy()
+        outputs['encoder_layer_embedding'] = x.numpy()
 
         x *= tf.math.sqrt(tf.cast(self.d_model, tf.float32))
-        # DEBUG outputs['encoder_layer_multiply_sqrt'] = x.numpy()
+        outputs['encoder_layer_multiply_sqrt'] = x.numpy()
 
         x += self.pos_encoding[:, :seq_len, :]
         x = self.dropout(x, training=training)
-        # DEBUG outputs['encoder_layer_pos_encoding'] = x.numpy()
+        outputs['encoder_layer_pos_encoding'] = x.numpy()
 
         for i in range(self.num_layers):
             x, enc_out = self.enc_layers[i](x, training, mask, i)
-            # DEBUG outputs.update(enc_out)
+            outputs.update(enc_out)
 
         return x, outputs  # (batch_size, input_seq_len, d_model)
 
@@ -317,14 +316,14 @@ class Decoder(tf.keras.layers.Layer):
         attention_weights = {}
 
         x = self.embedding(x)  # (batch_size, target_seq_len, d_model)
-        # DEBUG outputs['decoder_layer_embedding'] = x.numpy()
+        outputs['decoder_layer_embedding'] = x.numpy()
 
         x *= tf.math.sqrt(tf.cast(self.d_model, tf.float32))
-        # DEBUG outputs['decoder_layer_mult_sqrt'] = x.numpy()
+        outputs['decoder_layer_mult_sqrt'] = x.numpy()
 
         x += self.pos_encoding[:, :seq_len, :]
         x = self.dropout(x, training=training)
-        # DEBUG outputs['decoder_layer_pos_encoding'] = x.numpy()
+        outputs['decoder_layer_pos_encoding'] = x.numpy()
 
         for i in range(self.num_layers):
             x, block1, block2, dec_outs = self.dec_layers[i](x, enc_output, training,
@@ -332,7 +331,7 @@ class Decoder(tf.keras.layers.Layer):
 
             attention_weights[f'decoder_layer{i+1}_block1'] = block1
             attention_weights[f'decoder_layer{i+1}_block2'] = block2
-            # DEBUG outputs.update(dec_outs)
+            outputs.update(dec_outs)
 
         # x.shape == (batch_size, target_seq_len, d_model)
         return x, attention_weights, outputs
@@ -355,15 +354,15 @@ class Transformer(tf.keras.Model):
 
         inp, tar, enc_padding_mask, look_ahead_mask, dec_padding_mask = inputs
         enc_output, enc_outs = self.encoder(inp, training, enc_padding_mask)  # (batch_size, inp_seq_len, d_model)
-        # DEBUG outputs.update(enc_outs)
+        outputs.update(enc_outs)
 
         # dec_output.shape == (batch_size, tar_seq_len, d_model)
         dec_output, attention_weights, dec_outs = self.decoder(
             tar, enc_output, training, look_ahead_mask, dec_padding_mask)
-        # DEBUG outputs.update(dec_outs)
+        outputs.update(dec_outs)
 
         final_output = self.final_layer(dec_output)  # (batch_size, tar_seq_len, target_vocab_size)
-        # DEBUG outputs['final_dense_layer'] = final_output.numpy()
+        outputs['final_dense_layer'] = final_output.numpy()
 
         return final_output, attention_weights, outputs
 
@@ -575,7 +574,7 @@ def evaluate(sentence):
         decoder_input = tf.concat([decoder_input, predicted_id], axis=1)
         outputs = out
 
-    # DEBUG outputs['input_sentence'] = sentence.numpy()
+    outputs['input_sentence'] = sentence.numpy()
     return tf.squeeze(decoder_input, axis=0), attention_weights, sentence, outputs
 
 def plot_attention_weights(attention, sentence_vec, result_vec, sentence , result, layer):
@@ -702,7 +701,10 @@ if 0:
     except OSError:
         pass
     for i in range(0, len(weights)):
-        write_weights(weights[i], dest)
+        curWeight = weights[i]
+        #254 special case, transpose it so it's easier to read in Unity shaders
+        if i == 254: curWeight = np.transpose(curWeight)
+        write_weights(curWeight, dest)
     
     # with open("./data/eng_seq2text.tsv", "w", encoding="utf-8") as f:
     #     for k, v in token_English.word_index.items():

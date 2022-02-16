@@ -1,4 +1,4 @@
-﻿Shader "Translator/MSDF JP"
+﻿Shader "Translator/Eng2Jp/MSDF JP"
 {
     Properties
     {

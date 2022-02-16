@@ -557,7 +557,7 @@ public:
         const251 = getArray(&fin, 512);
         const252 = getArray(&fin, 512);
         const253 = getArray(&fin, 512);
-        const254 = getArray(&fin, 512, 44337);
+        const254 = getArray(&fin, 44337, 512);
         const255 = getArray(&fin, 44337);
 
         fin.close();
@@ -1196,7 +1196,7 @@ public:
         freeArray(512, const251);
         freeArray(512, const252);
         freeArray(512, const253);
-        freeArray(512, 44337, const254);
+        freeArray(44337, 512, const254);
         freeArray(44337, const255);
 
         freeArray(22, 22, encoderMask);
@@ -1419,6 +1419,22 @@ public:
 
             // relu
             cl[k][l] = cl[k][l] > 0.0f ? cl[k][l] : 0.0f;
+        }
+    }
+
+    void finalDenseLayer(float** cl, float** cw, float* cb, float** pl, uint l_max, uint m_max, uint k)
+    {
+        for (uint l = 0; l < l_max; l++)
+        {
+            cl[k][l] = 0.0f;
+            // weights
+            for (uint m = 0; m < m_max; m++)
+            {
+                cl[k][l] += pl[k][m] * cw[l][m];
+            }
+
+            // bias
+            cl[k][l] += cb[l];
         }
     }
 
@@ -1868,8 +1884,9 @@ public:
             }
 
             // final dense output
-            for (uint k = 0; k < seqOutLen; k++) {
-                thread t(&jp2eng::denseLayer, this, final_out, const254, const255, decoder_in, 44337, 512, k);
+            // we want to just evaluate the last token added to save some compute
+            for (uint k = seqOutLen - 1; k < seqOutLen; k++) {
+                thread t(&jp2eng::finalDenseLayer, this, final_out, const254, const255, decoder_in, 44337, 512, k);
                 threads.push_back(move(t));
             }
             for (auto& th : threads) th.join();

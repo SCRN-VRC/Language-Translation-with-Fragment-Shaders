@@ -138,6 +138,7 @@
                     float tokenSuccess = _LayersTex[txTokenSuccess];
 
                     float startBtn = _LayersTex[txStartBtn];
+                    float clearBtn = _LayersTex[txClearBtn];
 
                     TLState = _Time.y < 1.0 ? ST_FINISH : TLState;
                     TLPrevState = TLState;
@@ -240,6 +241,8 @@
                         layerCounter = layerCounter >= ENC_LAYERS ?
                             0 : layerCounter;
                         TLState = loopCounter >= MAX_LOOPS ? ST_DEC_SEQ : ST_ENCODER;
+                        // Stop if input cleared
+                        TLState = clearBtn > 0.5 ? ST_FINISH : TLState;
                     }
                     else if (TLState == ST_DEC_COPY)
                     {
@@ -261,13 +264,15 @@
                     }
                     else if (TLState == ST_DECODER)
                     {
-                        // go thru encoder all layers, loop MAX_LOOPS times
+                        // go thru decoder all layers, loop MAX_LOOPS times
                         layerCounter = layerCounter + 1;
                         loopCounter = layerCounter >= DEC_LAYERS ?
                             loopCounter + 1 : loopCounter;
                         layerCounter = layerCounter >= DEC_LAYERS ?
                             0 : layerCounter;
                         TLState = loopCounter >= MAX_LOOPS ? ST_DEC_FINAL : ST_DECODER;
+                        // Stop if input cleared
+                        TLState = clearBtn > 0.5 ? ST_FINISH : TLState;
                     }
                     else if (TLState == ST_DEC_FINAL)
                     {

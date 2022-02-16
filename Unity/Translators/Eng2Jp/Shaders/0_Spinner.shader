@@ -1,4 +1,4 @@
-﻿Shader "Translator/0_Spinner"
+﻿Shader "Translator/Eng2Jp/0_Spinner"
 {
     Properties
     {
