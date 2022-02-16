@@ -1,6 +1,7 @@
 #  Language Translation with Fragment Shaders
 
-<img src="./Media/unity setup.png" width="800" align="middle"/>
+<img src="./Media/unity1.png" width="800" align="middle"/>
+<img src="./Media/unity2.png" width="800" align="middle"/>
 
 ### NOTE: This was built and tested with Unity 2019.4.29f1 using built-in render pipeline, there may be shader compatibility issues with other versions.
 
@@ -28,7 +29,7 @@ One of the influential papers in natural language processing is called "[Attenti
 
 <img src="./Media/transformer.png" width="800" align="middle"/>
 
-To briefly go over how Transformers work, the input sentence is turned into a sequence of integers. In terms of this English to Japanese translator, every English word has an unique integer representation. And every Japanese character has their own unique integer representation as well on the output side.
+To briefly go over how Transformers work, the input sentence is turned into a sequence of integers. In terms of English to Japanese, every English word has an unique integer representation. And every Japanese character has their own unique integer representation as well on the output side.
 
 <img src="./Media/pos encode.png" width="400" align="middle"/>
 
@@ -40,16 +41,14 @@ The job of the encoder layer is to learn the relation of each word with other wo
 
 <img src="./Media/decoder layer.png" width="200" align="middle"/>
 
-The job of the decoder layer is to map the relationship the encoder has made with the input sentence and generate a target sentence. For this translator, Japanese is the target.
+The job of the decoder layer is to map the relationship the encoder has made with the input sentence and generate a target sentence.
 
 To generate a Japanese sentence, the decoder layer picks the highest probable Japanese character given the inputs. Then it's added to the end of a string of previous outputs to be fed into the decoder again to generate the next. This loops until an EOS, an end of sentence token, is predicted or the max length is reached.
 
 ## Setup
-
+### CLONING THE REPO WILL NOT WORK
 1. Download the latest .unitypackage from [Release](https://github.com/SCRN-VRC/Language-Translation-with-Fragment-Shaders/releases/) and import it.
-2. If you cloned the repo, GitHub will not host the large network models.
-    - Download [baked-eng2jp.asset](https://mega.nz/file/IFBRUSAY#YOIQMON8gsbIYtjgrE9rfVu0pgFMhCBeSoy5jNrvRUU) and put it inside the `Translator/Eng2Jp/Weights` folder for Unity before you open the Scene.
-3. Look in the Prefab folder and add the `TranslatorEng2Jp.prefab` in the world or avatar.
+3. Look for the Prefab folders and add the `TranslatorEng2Jp.prefab` or `TranslatorJp2Eng.prefab` in the world or avatar. Depending on what you want to use.
 4. Check if the network works in Playmode.
 
 ### Python, C++ Code
@@ -59,7 +58,7 @@ To generate a Japanese sentence, the decoder layer picks the highest probable Ja
     - My Python code is a copy of the tutorial linked above but modified to spit out intermediate layer outputs and trained with a different dataset. It's better to follow the tutorial linked above than try to run mine.
 - C++
     - Windows, for non-Windows platforms remove the Windows.h include.
-    - Download [eng2jp_weights.bytes](https://mega.nz/file/QZpUjZrL#eVdAr3nIhjkZIZ8dyhHXHI15Fx24CW9fS84oqMj3sV8) and put it in the same folder as the compiled executable.
+    - Download [eng2jp_weights.bytes](https://mega.nz/file/QZpUjZrL#eVdAr3nIhjkZIZ8dyhHXHI15Fx24CW9fS84oqMj3sV8) or [jp2eng_weights.bytes](https://mega.nz/file/AN4yQCqC#B8PHdSSboCLCcAsGtOA5IA9Ky7S-1OVhHkSzPLQdzAE) and put it in the same folder as the compiled executable depending on which model you want to run.
 
 ## Resources
 - [Attention Is All You Need](https://arxiv.org/abs/1706.03762)
