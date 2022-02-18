@@ -39,7 +39,7 @@
                 float4 vertex : SV_POSITION;
             };
 
-            //RWStructuredBuffer<float4> buffer : register(u1);
+            RWStructuredBuffer<float4> buffer : register(u1);
             Texture2D<float> _KeyTex;
             Texture2D<float> _LayersTex;
             float4 _LayersTex_TexelSize;
@@ -103,7 +103,7 @@
                         uint jx = (i & 0x1) == 0 ? j : j + 1;
                         float depth = _KeyTex[uint2(i, jx)].r;
                         //buffer[0] = hit;
-                        bool hit = abs(depth - 0.5) <= 0.005;
+                        bool hit = abs(depth - 0.5) <= 0.015;
                         touchPosCount.xy += hit ? float2(i, jx) : 0..xx;
                         touchPosCount.z += hit ? 1.0 : 0.0;
                     }
@@ -112,8 +112,7 @@
                 // 256 x 128 -> 10 x 5 grid
                 touchPosCount.xy = touchPosCount.xy / max(touchPosCount.z, 1.);
                 touchPosCount.xy -= float2(Ws, Hs);
-                touchPosCount.xy *= 3.0;
-                touchPosCount.xy = floor(touchPosCount.xy * 0.0390625 + 0.0390625);
+                touchPosCount.xy = floor(touchPosCount.xy * 0.117185);
                 // x is flipped
                 touchPosCount.x = 9.0 - touchPosCount.x;
 
@@ -158,7 +157,7 @@
                         onEnter = 1.0;
                     }
                     // Nothing's touching anymore
-                    inputState = touchPosCount.z < 1.0 ?
+                    inputState = touchPosCount.z <= INPUT_THRESHOLD ?
                         KEY_UP : KEY_DOWN;
                 }
                 else if (inputState == KEY_UP)

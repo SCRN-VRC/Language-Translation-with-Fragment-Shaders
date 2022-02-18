@@ -74,8 +74,8 @@
                 float col = _MainTex.Load(int3(mUV * _MainTex_TexelSize.zw, 0));
                 float buf = _BufferTex.Load(int3(i.uv.xy * _BufferTex_TexelSize.zw, 0));
 
-                bool hit = abs(col - 0.5) <= 0.004;
-                col = hit ? col / 0.003 : 0.0;
+                bool hit = abs(col - 0.5) <= 0.01;
+                col = hit ? col / 0.01 : 0.0;
 
                 float vertSel = _LayersTex[txVBtnSel];
                 uint vertState = floor(_LayersTex[txVBtnState]);
