@@ -74,9 +74,9 @@
                 clip(unity_OrthoParams.w ? -1 : 1);
                 float2 borderUV = i.uv;
                 // highlight selected
-                uint horzState = floor(_LayersTex[txHorzState]);
-                float horzSel = (_LayersTex[txHorzSel]) *
-                    ((horzState != HAND_IDLE) ? 1.0 : -10.0) - 1.0;
+                uint horzState = floor(_LayersTex[txHBtnState]);
+                float horzSel = _LayersTex[txHBtnSel] *
+                    ((horzState == HAND_DOWN) ? 1.0 : 0) - 1.0;
                 float red = abs(i.uv.x - 0.1 * (1.0 + 2.0 * horzSel)) < 0.1 ? 1.0 : 0.0;
                 _BGColor.rgb = lerp(_BGColor.rgb, float3(red, 0, 0), red.x);
                 

@@ -286,9 +286,9 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 561730737}
-  m_LocalRotation: {x: 0.2164396, y: 0, z: 0, w: 0.97629607}
-  m_LocalPosition: {x: 0.055, y: 0.585, z: -0.245}
-  m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
+  m_LocalRotation: {x: 0.2164396, y: -0, z: -0, w: 0.97629607}
+  m_LocalPosition: {x: 0.055, y: 0.855254, z: -0.24619004}
+  m_LocalScale: {x: 0.1, y: 0.10000001, z: 0.10000001}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 2
@@ -553,72 +553,72 @@ Transform:
   m_Father: {fileID: 1386137376}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1001 &4113553430361395838
+--- !u!1001 &2164672524665546336
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 4113553429564008642, guid: ab5937fc9c454fa4da805663b08c2a41,
+    - target: {fileID: 2164672525462379738, guid: ab5937fc9c454fa4da805663b08c2a41,
+        type: 3}
+      propertyPath: m_Name
+      value: TranslatorEng2Jp
+      objectReference: {fileID: 0}
+    - target: {fileID: 2164672525462379740, guid: ab5937fc9c454fa4da805663b08c2a41,
         type: 3}
       propertyPath: m_RootOrder
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 4113553429564008642, guid: ab5937fc9c454fa4da805663b08c2a41,
+    - target: {fileID: 2164672525462379740, guid: ab5937fc9c454fa4da805663b08c2a41,
         type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4113553429564008642, guid: ab5937fc9c454fa4da805663b08c2a41,
+    - target: {fileID: 2164672525462379740, guid: ab5937fc9c454fa4da805663b08c2a41,
         type: 3}
       propertyPath: m_LocalPosition.y
       value: 1.5
       objectReference: {fileID: 0}
-    - target: {fileID: 4113553429564008642, guid: ab5937fc9c454fa4da805663b08c2a41,
+    - target: {fileID: 2164672525462379740, guid: ab5937fc9c454fa4da805663b08c2a41,
         type: 3}
       propertyPath: m_LocalPosition.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4113553429564008642, guid: ab5937fc9c454fa4da805663b08c2a41,
+    - target: {fileID: 2164672525462379740, guid: ab5937fc9c454fa4da805663b08c2a41,
         type: 3}
       propertyPath: m_LocalRotation.w
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 4113553429564008642, guid: ab5937fc9c454fa4da805663b08c2a41,
+    - target: {fileID: 2164672525462379740, guid: ab5937fc9c454fa4da805663b08c2a41,
         type: 3}
       propertyPath: m_LocalRotation.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4113553429564008642, guid: ab5937fc9c454fa4da805663b08c2a41,
+    - target: {fileID: 2164672525462379740, guid: ab5937fc9c454fa4da805663b08c2a41,
         type: 3}
       propertyPath: m_LocalRotation.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4113553429564008642, guid: ab5937fc9c454fa4da805663b08c2a41,
+    - target: {fileID: 2164672525462379740, guid: ab5937fc9c454fa4da805663b08c2a41,
         type: 3}
       propertyPath: m_LocalRotation.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4113553429564008642, guid: ab5937fc9c454fa4da805663b08c2a41,
+    - target: {fileID: 2164672525462379740, guid: ab5937fc9c454fa4da805663b08c2a41,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4113553429564008642, guid: ab5937fc9c454fa4da805663b08c2a41,
+    - target: {fileID: 2164672525462379740, guid: ab5937fc9c454fa4da805663b08c2a41,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4113553429564008642, guid: ab5937fc9c454fa4da805663b08c2a41,
+    - target: {fileID: 2164672525462379740, guid: ab5937fc9c454fa4da805663b08c2a41,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4113553429564008644, guid: ab5937fc9c454fa4da805663b08c2a41,
-        type: 3}
-      propertyPath: m_Name
-      value: TranslatorEng2Jp
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: ab5937fc9c454fa4da805663b08c2a41, type: 3}

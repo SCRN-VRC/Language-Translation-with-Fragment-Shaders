@@ -69,7 +69,7 @@ static const uint4 weightsPos[56] =
 
 /* Outputs */
 
-static const uint4 layersPos[12] =
+static const uint4 layersPos[13] =
 {
     0, 0, 1024, 144,       // l0
     0, 144, 1024, 144,       // l1
@@ -83,6 +83,7 @@ static const uint4 layersPos[12] =
     114, 1296, 144, 1,       // l9
     0, 1296, 57, 57,       // l10
     57, 1296, 57, 57,       // l11
+    115, 1296, 4, 4,       // button input controller
 };
 
 // float testGen(uint3 pos, float2 size)
@@ -210,14 +211,17 @@ sc_uint2 txTop2Val = layersPos[11].xy + uint2(9, 0);
 sc_uint2 txTop3Val = layersPos[11].xy + uint2(10, 0);
 sc_uint2 txTop4Val = layersPos[11].xy + uint2(11, 0);
 sc_uint2 txTop5Val = layersPos[11].xy + uint2(12, 0);
-sc_uint2 txHorzSel = layersPos[11].xy + uint2(13, 0);
-sc_uint2 txVertSel = layersPos[11].xy + uint2(14, 0);
-sc_uint2 txHorzState = layersPos[11].xy + uint2(15, 0);
-sc_uint2 txVertState = layersPos[11].xy + uint2(16, 0);
-sc_uint2 txCursorPos = layersPos[11].xy + uint2(17, 0);
 
 // input buffer for translator
 sc_uint2 txInputBuffer = layersPos[11].xy + uint2(37, 56);
+
+sc_uint2 txVBtnSel = layersPos[12].xy + uint2(0, 0);
+sc_uint2 txVBtnState = layersPos[12].xy + uint2(1, 0);
+sc_uint2 txVBtnEnter = layersPos[12].xy + uint2(2, 0);
+sc_uint2 txHBtnSel = layersPos[12].xy + uint2(0, 1);
+sc_uint2 txHBtnState = layersPos[12].xy + uint2(1, 1);
+sc_uint2 txHBtnEnter = layersPos[12].xy + uint2(2, 1);
+sc_uint2 txCursorPos = layersPos[12].xy + uint2(0, 2);
 
 #define INPUT_THRESHOLD     0.0
 #define HAND_IDLE           0

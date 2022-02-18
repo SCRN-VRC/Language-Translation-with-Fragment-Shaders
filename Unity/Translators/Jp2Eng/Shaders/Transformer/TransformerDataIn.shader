@@ -111,11 +111,12 @@
                     uint nextWord = round(_LayersTex[txNextWord]);
                     float outLen = floor(_LayersTex[txOutLen]);
 
-                    float vertSel = _ConvMixerTex[txVertSel];
-                    uint vertState = floor(_ConvMixerTex[txVertState]);
+                    float VbtnSel = _ConvMixerTex[txVBtnSel];
+                    uint VbtnState = floor(_ConvMixerTex[txVBtnState]);
+                    float VbtnEnter = _ConvMixerTex[txVBtnEnter];
 
-                    float startBtn = (vertState == HAND_UP && abs(vertSel - 3.0) < 0.001) ? 1.0 : 0.0;
-                    float clearBtn = (vertState == HAND_UP && abs(vertSel - 2.0) < 0.001) ? 1.0 : 0.0;
+                    float startBtn = (VbtnState == HAND_DOWN  && VbtnEnter < 1.0 && abs(VbtnSel - 1.0) < 0.001) ? 1.0 : 0.0;
+                    float clearBtn = (VbtnState == HAND_DOWN && VbtnEnter < 1.0 && abs(VbtnSel - 2.0) < 0.001) ? 1.0 : 0.0;
 
                     TLState = _Time.y < 1.0 ? ST_FINISH : TLState;
                     TLPrevState = TLState;

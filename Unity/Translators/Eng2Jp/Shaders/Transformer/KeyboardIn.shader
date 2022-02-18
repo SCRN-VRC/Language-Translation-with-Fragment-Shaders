@@ -90,24 +90,34 @@
                 }
 
                 float3 touchPosCount = 0.0;
-                for (uint i = 0; i < uint(_KeyTex_TexelSize.z); i++)
+                // Since the bounding box is 3x larger than normal
+                // we just start at the 1/3 and end at 2/3
+                uint Ws = uint(_KeyTex_TexelSize.z / 3.0);
+                uint We = Ws * 2;
+                uint Hs = uint(_KeyTex_TexelSize.w / 3.0);
+                uint He = Hs * 2;
+                for (uint i = Ws; i < We; i++)
                 {
-                    for (uint j = 0; j < uint(_KeyTex_TexelSize.w); j += 2)
+                    for (uint j = Hs; j < He; j += 2)
                     {
                         uint jx = (i & 0x1) == 0 ? j : j + 1;
-                        float hit = _KeyTex[uint2(i, jx)].r;
-                        touchPosCount.xy += hit > 0.3 ? float2(i, jx) : 0..xx;
-                        touchPosCount.z += hit > 0.3 ? 1.0 : 0.0;
+                        float depth = _KeyTex[uint2(i, jx)].r;
+                        //buffer[0] = hit;
+                        bool hit = abs(depth - 0.5) <= 0.005;
+                        touchPosCount.xy += hit ? float2(i, jx) : 0..xx;
+                        touchPosCount.z += hit ? 1.0 : 0.0;
                     }
                 }
 
                 // 256 x 128 -> 10 x 5 grid
-                touchPosCount.xy = floor(touchPosCount.xy /
-                    max(touchPosCount.z, 1.) * 0.0390625 + 0.0390625);
+                touchPosCount.xy = touchPosCount.xy / max(touchPosCount.z, 1.);
+                touchPosCount.xy -= float2(Ws, Hs);
+                touchPosCount.xy *= 3.0;
+                touchPosCount.xy = floor(touchPosCount.xy * 0.0390625 + 0.0390625);
                 // x is flipped
                 touchPosCount.x = 9.0 - touchPosCount.x;
 
-                //buffer[0].xyz = float3(inputState, onEnter, pointer);
+                //buffer[0] = touchPosCount.xyzz;
 
                 if (inputState == KEY_IDLE)
                 {

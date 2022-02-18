@@ -41,10 +41,10 @@
             };
 
             RWStructuredBuffer<float4> buffer : register(u1);
-            Texture2D<float4> _BufferTex;
+            Texture2D<float> _BufferTex;
             float4 _BufferTex_TexelSize;
 
-            Texture2D<float4> _MainTex;
+            Texture2D<float> _MainTex;
             float4 _MainTex_TexelSize;
 
             Texture2D<float> _LayersTex;
@@ -66,18 +66,23 @@
                 return o;
             }
 
-            float4 frag (v2f i) : SV_Target
+            float frag (v2f i) : SV_Target
             {
                 clip(i.uv.z);
                 // sample the texture
-                float4 col = _MainTex.Load(int3(i.uv.xy * _MainTex_TexelSize.zw, 0));
-                float4 buf = _BufferTex.Load(int3(i.uv.xy * _BufferTex_TexelSize.zw, 0));
+                float2 mUV = i.uv.xy / 2.0 + 0.25;
+                float col = _MainTex.Load(int3(mUV * _MainTex_TexelSize.zw, 0));
+                float buf = _BufferTex.Load(int3(i.uv.xy * _BufferTex_TexelSize.zw, 0));
 
-                float vertSel = _LayersTex[txVertSel];
-                uint vertState = floor(_LayersTex[txVertState]);
-                uint horzState = floor(_LayersTex[txHorzState]);
+                bool hit = abs(col - 0.5) <= 0.004;
+                col = hit ? col / 0.003 : 0.0;
 
-                bool clear = ((vertSel < 3.0) && vertState == HAND_UP) || (horzState == HAND_UP);
+                float vertSel = _LayersTex[txVBtnSel];
+                uint vertState = floor(_LayersTex[txVBtnState]);
+                uint horzState = floor(_LayersTex[txHBtnState]);
+
+                bool clear = ((vertSel > 2.0) && vertState == HAND_DOWN) ||
+                    (horzState == HAND_DOWN);
 
                 col = saturate(col * 2.0 + buf);
                 col = clear ? 0..xxxx : col;

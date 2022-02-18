@@ -1,11 +1,9 @@
-﻿Shader "HandwriteClassify/Controller"
+﻿Shader "HandwriteClassify/HandwriteController"
 {
     Properties
     {
         _LayersTex ("Layers Texture", 2D) = "black" {}
         _HandwriteTex ("Handwrite Input", 2D) = "black" {}
-        _VertBtnTex ("Vertical Buttons", 2D) = "black" {}
-        _HorzBtnTex ("Horizontal Buttons", 2D) = "black" {}
         _WeightBiasLoopID ("Weight, Bias, Loop Max, CurID", Vector) = (0, 0, 0, 0)
         _BatchNormID ("Batch Norm IDs", Vector) = (0, 0, 0, 0)
         _MaxDist ("Max Distance", Float) = 0.02
@@ -46,12 +44,8 @@
             RWStructuredBuffer<float4> buffer : register(u1);
             Texture2D<float> _LayersTex;
             Texture2D<float> _HandwriteTex;
-            Texture2D<float> _VertBtnTex;
-            Texture2D<float> _HorzBtnTex;
             float4 _LayersTex_TexelSize;
             float4 _HandwriteTex_TexelSize;
-            float4 _VertBtnTex_TexelSize;
-            float4 _HorzBtnTex_TexelSize;
             uint4 _WeightBiasLoopID;
             uint4 _BatchNormID;
             float _MaxDist;
@@ -82,21 +76,11 @@
                 float col = _LayersTex[px];
                 float layerCount = _LayersTex[txLayerCount];
                 uint inputState = floor(_LayersTex[txInputState]);
-                float horzSel = _LayersTex[txHorzSel];
-                float vertSel = _LayersTex[txVertSel];
-                uint horzState = floor(_LayersTex[txHorzState]);
-                uint vertState = floor(_LayersTex[txVertState]);
-                int cursorPos = floor(_LayersTex[txCursorPos]);
 
                 if (_Time.y < 1.0)
                 {
-                    layerCount = 0.0;
+                    layerCount = 11.0;
                     inputState = HAND_IDLE;
-                    horzSel = 0;
-                    vertSel = 0;
-                    horzState = 0;
-                    vertState = 0;
-                    cursorPos = 0;
                 }
 
                 // classify scores
@@ -137,17 +121,23 @@
 
                 // Handwrite input
                 float3 touchPosCount = 0.0;
-                for (uint i = 0; i < uint(_HandwriteTex_TexelSize.z); i++)
+                // Since the bounding box is 2x larger
+                uint Ws = uint(_HandwriteTex_TexelSize.z * 0.25);
+                uint We = Ws * 3;
+                uint Hs = uint(_HandwriteTex_TexelSize.w * 0.25);
+                uint He = Hs * 3;
+                for (uint i = Ws; i < We; i++)
                 {
-                    for (uint j = 0; j < uint(_HandwriteTex_TexelSize.w); j += 2)
+                    for (uint j = Hs; j < He; j += 2)
                     {
                         uint jx = (i & 0x1) == 0 ? j : j + 1;
-                        float hit = _HandwriteTex[uint2(i, jx)].r;
-                        touchPosCount.xy += hit > 0.1 ? float2(i, jx) : 0..xx;
-                        touchPosCount.z += hit > 0.1 ? 1.0 : 0.0;
+                        float depth = _HandwriteTex[uint2(i, jx)].r;
+                        bool hit = abs(depth - 0.5) <= 0.004;
+                        touchPosCount.xy += hit ? float2(i, jx) : 0..xx;
+                        touchPosCount.z += hit ? 1.0 : 0.0;
                     }
                 }
-
+                //buffer[0] = float4(touchPosCount.xyz, 0);
                 if (inputState == HAND_IDLE)
                 {
                     // Idle until something touches
@@ -174,117 +164,34 @@
                 // translator input buffer logic
                 if (all(px >= txInputBuffer))
                 {
+
+                    float VbtnSel = _LayersTex[txVBtnSel];
+                    uint VbtnState = floor(_LayersTex[txVBtnState]);
+                    float VbtnEnter = _LayersTex[txVBtnEnter];
+                    float HbtnSel = _LayersTex[txHBtnSel];
+                    uint HbtnState = floor(_LayersTex[txHBtnState]);
+                    float HbtnEnter = _LayersTex[txHBtnEnter];
+                    int cursorPos = _LayersTex[txCursorPos];
+
                     px -= txInputBuffer;
                     col = _Time.y < 1.0 ? 0.0 : col; // fill empty
                     // user selects input character
-                    if (horzState == HAND_UP)
+                    if (HbtnState == HAND_DOWN && HbtnEnter < 1.0)
                     {
-                        uint word = round(_LayersTex[txTop1.xy + uint2(horzSel - 1, 0)]);
+                        uint word = round(_LayersTex[txTop1.xy + uint2(HbtnSel - 1, 0)]);
                         col = px.x == cursorPos ? word : col;
                     }
                     // backspace
-                    else if (vertState == HAND_UP && abs(vertSel - 2.0) < eps)
+                    else if (VbtnState == HAND_DOWN && VbtnEnter < 1.0 && abs(VbtnSel - 2.0) < eps)
                     {
                         col = px.x == (cursorPos - 1) ? 2.0 : col;
                         col = px.x == (cursorPos) ? 0.0 : col;
                     }
                 }
 
-                // Horizontal buttons input
-                
-                touchPosCount = 0.0;
-                for (uint i = 0; i < uint(_HorzBtnTex_TexelSize.z); i++)
-                {
-                    for (uint j = 0; j < uint(_HorzBtnTex_TexelSize.w); j += 2)
-                    {
-                        uint jx = (i & 0x1) == 0 ? j : j + 1;
-                        float hit = _HorzBtnTex[uint2(i, jx)].r;
-                        touchPosCount.xy += hit > 0.1 ? float2(i, jx) : 0..xx;
-                        touchPosCount.z += hit > 0.1 ? 1.0 : 0.0;
-                    }
-                }
-
-                if (horzState == HAND_IDLE)
-                {
-                    // Idle until something touches
-                    horzState = touchPosCount.z > INPUT_THRESHOLD ?
-                        HAND_DOWN : HAND_IDLE;
-                }
-                else if (horzState == HAND_DOWN)
-                {
-                    if (touchPosCount.z <= INPUT_THRESHOLD)
-                    {
-                        horzState = HAND_UP;
-                    }
-                    else
-                    {
-                        horzSel = floor(5.0 - (touchPosCount.x / max(touchPosCount.z, 1.0)
-                            / _HorzBtnTex_TexelSize.z * 5.0) + 1.0);
-                    }
-                }
-                else if (horzState == HAND_UP)
-                {
-                    // increment cursor
-                    cursorPos = min(cursorPos + 1, 20);
-                    horzState = HAND_IDLE;
-                }
-                else
-                {
-                    horzState = HAND_IDLE;
-                }
-
-                // Vertical buttons input
-
-                touchPosCount = 0.0;
-                for (uint i = 0; i < uint(_VertBtnTex_TexelSize.z); i++)
-                {
-                    for (uint j = 0; j < uint(_VertBtnTex_TexelSize.w); j += 2)
-                    {
-                        uint jx = (i & 0x1) == 0 ? j : j + 1;
-                        float hit = _VertBtnTex[uint2(i, jx)].r;
-                        touchPosCount.xy += hit > 0.1 ? float2(i, jx) : 0..xx;
-                        touchPosCount.z += hit > 0.1 ? 1.0 : 0.0;
-                    }
-                }
-
-                if (vertState == HAND_IDLE)
-                {
-                    // Idle until something touches
-                    vertState = touchPosCount.z > INPUT_THRESHOLD ?
-                        HAND_DOWN : HAND_IDLE;
-                }
-                else if (vertState == HAND_DOWN)
-                {
-                    if (touchPosCount.z <= INPUT_THRESHOLD)
-                    {
-                        vertState = HAND_UP;
-                    }
-                    else
-                    {
-                        vertSel = floor(3.0 - (touchPosCount.y / max(touchPosCount.z, 1.0)
-                            / _VertBtnTex_TexelSize.w * 3.0) + 1.0);
-                    }
-                }
-                else if (vertState == HAND_UP)
-                {
-                    // decrement cursor
-                    cursorPos = abs(vertSel - 2.0) < eps ?
-                        max(cursorPos - 1, 0) : cursorPos;
-                    vertState = HAND_IDLE;
-                }
-                else
-                {
-                    vertState = HAND_IDLE;
-                }
-
                 //buffer[0] = cursorPos;
                 StoreValue(txLayerCount,    layerCount,            col, px);
                 StoreValue(txInputState,    float(inputState),     col, px);
-                StoreValue(txHorzSel,       horzSel,               col, px);
-                StoreValue(txVertSel,       vertSel,               col, px);
-                StoreValue(txHorzState,     float(horzState),      col, px);
-                StoreValue(txVertState,     float(vertState),      col, px);
-                StoreValue(txCursorPos,     float(cursorPos),      col, px);
                 return col;
             }
             ENDCG

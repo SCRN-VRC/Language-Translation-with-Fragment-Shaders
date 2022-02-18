@@ -17,6 +17,7 @@
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+            #pragma target 5.0
 
             #include "UnityCG.cginc"
             #include "ConvMixer/ConvMixerModel.cginc"
@@ -33,6 +34,7 @@
                 float4 vertex : SV_POSITION;
             };
 
+            //RWStructuredBuffer<float4> buffer : register(u1);
             sampler2D _MainTex;
             float4 _MainTex_ST;
             Texture2D<float> _LayersTex;
@@ -48,11 +50,11 @@
             float4 frag (v2f i) : SV_Target
             {
                 clip(unity_OrthoParams.w ? -1 : 1);
-                uint vertState = floor(_LayersTex[txVertState]);
-                float vertSel = (4.0 - (_LayersTex[txVertSel])) *
-                    ((vertState != HAND_IDLE) ? 1.0 : -10.0) - 1.0;
+                uint btnState = floor(_LayersTex[txVBtnState]);
+                float btnSel = _LayersTex[txVBtnSel] *
+                    (btnState == HAND_DOWN ? 1.0 : 0.0) - 1.0;
                 // color the selection red
-                float red = abs(i.uv.y - 0.1667 * (1.0 + 2.0 * vertSel)) < 0.1667 ? 1.0 : 0.0;
+                float red = abs(i.uv.y - 0.1667 * (1.0 + 2.0 * btnSel)) < 0.1667 ? 1.0 : 0.0;
                 float4 col = tex2D(_MainTex, i.uv);
                 col = lerp(float4(red, 0..xx, red), col, col.a);
 
