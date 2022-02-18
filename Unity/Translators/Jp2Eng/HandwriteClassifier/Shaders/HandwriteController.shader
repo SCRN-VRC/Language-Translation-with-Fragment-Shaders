@@ -132,7 +132,7 @@
                     {
                         uint jx = (i & 0x1) == 0 ? j : j + 1;
                         float depth = _HandwriteTex[uint2(i, jx)].r;
-                        bool hit = abs(depth - 0.5) <= 0.01;
+                        bool hit = abs(depth - 0.5) <= 0.0075;
                         touchPosCount.xy += hit ? float2(i, jx) : 0..xx;
                         touchPosCount.z += hit ? 1.0 : 0.0;
                     }

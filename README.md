@@ -48,8 +48,10 @@ To generate a Japanese sentence, the decoder layer picks the highest probable Ja
 ## Setup
 ### CLONING THE REPO WILL NOT WORK
 1. Download the latest .unitypackage from [Release](https://github.com/SCRN-VRC/Language-Translation-with-Fragment-Shaders/releases/) and import it.
-3. Look for the Prefab folders and add the `TranslatorEng2Jp.prefab` or `TranslatorJp2Eng.prefab` in the world or avatar. Depending on what you want to use.
-4. Check if the network works in Playmode.
+3. Look for the Prefab folders and find `TranslatorEng2Jp.prefab` or `TranslatorJp2Eng.prefab`.
+4. If adding to avatar, **drop the prefab into the Scene first.**
+5. Then add the prefab into the avatar hierarchy. This keeps the prefab the same size if the avatar or the bones are not scaled to 1.
+6. Check if the network works in Playmode.
 
 ### Python, C++ Code
 

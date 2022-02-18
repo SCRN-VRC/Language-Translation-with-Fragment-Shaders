@@ -56,6 +56,7 @@
 
             float4 frag (v2f i) : SV_Target
             {
+                clip(unity_OrthoParams.w ? -1 : 1);
                 float val = tex2D(_MainTex, i.uv).r * _Scale;
                 val = val < 0.0 ? -tanh(val) * _Scale * 0.5 : val;
                 float3 col = inferno_quintic(val);

@@ -83,7 +83,7 @@ static const uint4 layersPos[13] =
     114, 1296, 144, 1,       // l9
     0, 1296, 57, 57,       // l10
     57, 1296, 57, 57,       // l11
-    115, 1296, 4, 4,       // button input controller
+    114, 1297, 4, 4,       // button input controller
 };
 
 // float testGen(uint3 pos, float2 size)

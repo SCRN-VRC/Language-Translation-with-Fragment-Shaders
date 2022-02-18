@@ -565,9 +565,9 @@ sc_uint2 txOutLen = layersPos[43].xy + uint2(3, 7);
 
 // Convmixer defines
 
-sc_uint2 txVBtnSel = uint2(115, 1296) + uint2(0, 0);
-sc_uint2 txVBtnState = uint2(115, 1296) + uint2(1, 0);
-sc_uint2 txVBtnEnter = uint2(115, 1296) + uint2(2, 0);
+sc_uint2 txVBtnSel = uint2(114, 1297) + uint2(0, 0);
+sc_uint2 txVBtnState = uint2(114, 1297) + uint2(1, 0);
+sc_uint2 txVBtnEnter = uint2(114, 1297) + uint2(2, 0);
 
 #define HAND_IDLE           0
 #define HAND_DOWN           1
