@@ -180,7 +180,7 @@ private:
 
     float**** getArray(ifstream* fin, int mi, int mj, int mk, int ml)
     {
-        float**** buff = (float****)createArray(mi, mj, mk, ml, sizeof(float));
+        float**** buff = createArray(mi, mj, mk, ml, sizeof(float));
         for (int i = 0; i < mi; i++) {
             for (int j = 0; j < mj; j++) {
                 for (int k = 0; k < mk; k++) {
@@ -193,7 +193,7 @@ private:
 
     float*** getArray(ifstream* fin, int mi, int mj, int mk)
     {
-        float*** buff = (float***)createArray(mi, mj, mk, sizeof(float));
+        float*** buff = createArray(mi, mj, mk, sizeof(float));
         for (int i = 0; i < mi; i++) {
             for (int j = 0; j < mj; j++) {
                 fin->read(reinterpret_cast<char*>(buff[i][j]), sizeof(float) * mk);
@@ -204,7 +204,7 @@ private:
 
     float** getArray(ifstream* fin, int mi, int mj)
     {
-        float** buff = (float**)createArray(mi, mj, sizeof(float));
+        float** buff = createArray(mi, mj, sizeof(float));
         for (int i = 0; i < mi; i++) {
             fin->read(reinterpret_cast<char*>(buff[i]), sizeof(float) * mj);
         }
@@ -222,20 +222,20 @@ public:
     // Annoying mallocs
     static float** createArray(int i, int j, size_t size)
     {
-        float** r = new float* [i * sizeof(float*)];
+        float** r = new float* [i];
         for (int x = 0; x < i; x++) {
-            r[x] = new float[j * size];
+            r[x] = new float[j];
         }
         return r;
     }
 
     static float*** createArray(int i, int j, int k, size_t size)
     {
-        float*** r = new float** [i * sizeof(float*)];
+        float*** r = new float** [i];
         for (int x = 0; x < i; x++) {
-            r[x] = new float* [j * sizeof(float*)];
+            r[x] = new float* [j];
             for (int y = 0; y < j; y++) {
-                r[x][y] = new float[k * size];
+                r[x][y] = new float[k];
             }
         }
         return r;
@@ -243,13 +243,13 @@ public:
 
     static float**** createArray(int i, int j, int k, int l, size_t size)
     {
-        float**** r = new float*** [i * sizeof(float*)];
+        float**** r = new float*** [i];
         for (int x = 0; x < i; x++) {
-            r[x] = new float** [j * sizeof(float*)];
+            r[x] = new float** [j];
             for (int y = 0; y < j; y++) {
-                r[x][y] = new float* [k * sizeof(float*)];
+                r[x][y] = new float* [k];
                 for (int z = 0; z < k; z++) {
-                    r[x][y][z] = new float[l * size];
+                    r[x][y][z] = new float[l];
                 }
             }
         }
